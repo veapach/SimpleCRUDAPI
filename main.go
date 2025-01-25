@@ -30,6 +30,7 @@ func main() {
 	http.HandleFunc("/update-task", updateTask)
 	http.HandleFunc("/delete-task", deleteTask)
 	http.HandleFunc("/new-user", newUser)
+	http.HandleFunc("/delete-user", deleteUser)
 	http.HandleFunc("/auth", userAuth)
 	http.ListenAndServe(":8080", nil)
 }
@@ -95,6 +96,53 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "New user added successfully"})
 }
 
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("sqlite3", "./tasks.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	userID := r.URL.Query().Get("id")
+	if userID == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	_, err = db.Exec("DELETE FROM users WHERE id = ?", userID)
+	if err != nil {
+		http.Error(w, "Error deleting user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User deleted successfully"})
+}
+
+func deleteTask(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("sqlite3", "./tasks.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	taskID := r.URL.Query().Get("id")
+	if taskID == "" {
+		http.Error(w, "Task ID is required", http.StatusBadRequest)
+		return
+	}
+
+	_, err = db.Exec("DELETE FROM tasks WHERE id = ?", taskID)
+	if err != nil {
+		http.Error(w, "Error deleteing task", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Task deleted successfully"})
+
+}
+
 func updateTask(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("sqlite3", "./tasks.db")
 	if err != nil {
@@ -144,30 +192,6 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Error(w, "No fields to update", http.StatusBadRequest)
 	}
-
-}
-
-func deleteTask(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("sqlite3", "./tasks.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	taskID := r.URL.Query().Get("id")
-	if taskID == "" {
-		http.Error(w, "Task ID is required", http.StatusBadRequest)
-		return
-	}
-
-	_, err = db.Exec("DELETE FROM tasks WHERE id = ?", taskID)
-	if err != nil {
-		http.Error(w, "Error deleteing task", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Task deleted successfully"})
 
 }
 
